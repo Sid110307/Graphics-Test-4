@@ -4,3 +4,5 @@ bin/
 .vscode/
 .vs/
 .idea/
+
+imgui.ini
