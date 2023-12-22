@@ -81,8 +81,8 @@ void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
-Model::Model(const GLchar* path) { loadModel(path); }
-void Model::draw(Shader &shader) { for (auto mesh: meshes) mesh.draw(shader); }
+Model::Model(const GLchar* path, Shader &shader) : Object(shader) { loadModel(path); }
+void Model::draw() { for (auto mesh: meshes) mesh.draw(shader); }
 
 void Model::loadModel(const std::string &path)
 {

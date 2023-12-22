@@ -17,6 +17,7 @@ add_executable(graphicsTest4
         ${PROJECT_SOURCE_DIR}/shader.cpp
         ${PROJECT_SOURCE_DIR}/model.cpp
         ${PROJECT_SOURCE_DIR}/camera.cpp
+        ${PROJECT_SOURCE_DIR}/objects.cpp
 )
 
 find_package(OpenGL REQUIRED)

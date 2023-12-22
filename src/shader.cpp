@@ -88,6 +88,17 @@ void Shader::use() const
     glUseProgram(ID);
 }
 
+void Shader::setMatrices(glm::mat4 view, glm::mat4 projection) const
+{
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    setMat4("model", modelMatrix);
+    setMat4("view", view);
+    setMat4("projection", projection);
+}
+
 void Shader::setBool(const std::string &name, GLboolean value) const
 {
     glUniform1i(glGetUniformLocation(ID, name.c_str()), static_cast<GLint>(value));

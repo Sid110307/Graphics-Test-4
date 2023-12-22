@@ -18,6 +18,7 @@ public:
 
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath);
     void use() const;
+    void setMatrices(glm::mat4 view, glm::mat4 projection) const;
 
     void setBool(const std::string &name, GLboolean value) const;
     void setInt(const std::string &name, GLint value) const;

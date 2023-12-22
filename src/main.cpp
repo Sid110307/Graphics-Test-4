@@ -7,17 +7,16 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "include/shader.h"
 #include "include/model.h"
+#include "include/objects.h"
 #include "include/camera.h"
 
 constexpr GLint WIDTH = 1280, HEIGHT = 720;
 
 GLdouble lastFrameTime = 0.0f;
 GLfloat cameraNear = 0.1f, cameraFar = 100.0f;
+glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f);
 
 ImGuiIO io;
 Camera camera;
@@ -153,7 +152,7 @@ void renderGUI()
     ImGui::NewFrame();
 
     ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoTitleBar);
-    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
     ImGui::SeparatorText("Controls");
     ImGui::Text("W: Move Forward");
@@ -181,39 +180,62 @@ void renderGUI()
     ImGui::SliderFloat("Near Plane", &cameraNear, 0.0f, 1.0f);
     ImGui::SliderFloat("Far Plane", &cameraFar, 0.0f, 100.0f);
 
+    ImGui::SeparatorText("Lighting");
+    ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -10.0f, 10.0f);
+    ImGui::SliderFloat3("Light Rotation", glm::value_ptr(lightRotation), -360.0f, 360.0f);
+    ImGui::SliderFloat3("Light Scale", glm::value_ptr(lightScale), 0.0f, 10.0f);
+
     ImGui::SeparatorText("Info");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     ImGui::Text("OpenGL Version: %s", glGetString(GL_VERSION));
     ImGui::Text("GLSL Version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    ImGui::Text("ImGui Version: %s", IMGUI_VERSION);
     ImGui::Text("Renderer: %s", glGetString(GL_RENDERER));
 
     ImGui::End();
-
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void renderGraphics(Shader &shader, Model &model, glm::mat4 &view, glm::mat4 &projection)
+void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
 {
-    shader.use();
+    {
+        Shader defaultShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Model model("lib/models/cube.stl", defaultShader);
 
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        defaultShader.use();
+        defaultShader.setMatrices(view, projection);
 
-    shader.setMat4("model", modelMatrix);
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
+        model.draw();
+    }
+    {
+        // FIXME: Light is not working
+        Shader lightShader("lib/shaders/lightVertex.glsl", "lib/shaders/lightFragment.glsl");
+        Cube light(lightShader);
 
-    model.draw(shader);
+        light.position = lightPosition;
+        light.rotation = lightRotation;
+        light.scale = lightScale;
+
+        lightShader.setVec3("lightColor", glm::vec3(1.0f));
+        lightShader.setVec3("lightDirection", light.rotation);
+        lightShader.setVec3("lightPosition", light.position);
+        lightShader.setVec3("viewPos", camera.getPosition());
+        lightShader.setFloat("cutOff", glm::cos(glm::radians(12.5f)));
+        lightShader.setFloat("outerCutOff", glm::cos(glm::radians(17.5f)));
+
+        light.updateModel();
+
+        lightShader.use();
+        lightShader.setMatrices(view, projection);
+
+        light.draw();
+    }
 }
 
 int main()
 {
     auto window = init();
-
-    Shader shader("lib/shaders/vertex.glsl", "lib/shaders/fragment.glsl");
-    Model model("lib/models/cube.stl");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -229,7 +251,7 @@ int main()
         lastFrameTime = currentFrameTime;
 
         handleInput(window, deltaTime);
-        renderGraphics(shader, model, view, projection);
+        renderGraphics(view, projection);
         renderGUI();
 
         glfwSwapBuffers(window);
