@@ -1,8 +1,8 @@
 #include "include/camera.h"
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch)
-        : position(position), orientation(glm::vec3(0.0f, 0.0f, -1.0f)), up(up), right(glm::vec3(0.0f)), pitch(pitch),
-          yaw(yaw), movementSpeed(SPEED), mouseSensitivity(SENSITIVITY), fov(FOV)
+        : pitch(pitch), yaw(yaw), movementSpeed(SPEED), mouseSensitivity(SENSITIVITY), fov(FOV), near(NEAR), far(FAR),
+          position(position), orientation(glm::vec3(0.0f, 0.0f, -1.0f)), up(up), right(glm::vec3(0.0f))
 {
     updateCameraVectors();
 }
@@ -12,9 +12,9 @@ glm::mat4 Camera::getViewMatrix() const
     return glm::lookAt(position, position + orientation, up);
 }
 
-glm::mat4 Camera::getProjectionMatrix(GLfloat aspectRatio, GLfloat fov, GLfloat near, GLfloat far)
+glm::mat4 Camera::getProjectionMatrix(GLfloat aspectRatio, GLfloat fieldOfView) const
 {
-    return glm::perspective(glm::radians(fov), aspectRatio, near, far);
+    return glm::perspective(glm::radians(fieldOfView), aspectRatio, near, far);
 }
 
 void Camera::processKeyboard(CameraMovement direction, GLdouble deltaTime)
@@ -25,6 +25,8 @@ void Camera::processKeyboard(CameraMovement direction, GLdouble deltaTime)
     if (direction == BACKWARD) position -= orientation * velocity;
     if (direction == LEFT) position -= right * velocity;
     if (direction == RIGHT) position += right * velocity;
+    if (direction == UP) position += up * velocity;
+    if (direction == DOWN) position -= up * velocity;
 }
 
 void Camera::processMouseMovement(GLfloat xOffset, GLfloat yOffset)
@@ -75,6 +77,5 @@ void Camera::updateCameraVectors()
 }
 
 glm::vec3 Camera::getPosition() const { return position; }
-glm::vec3 Camera::getOrientation() const { return glm::normalize(orientation); }
+glm::vec3 Camera::getOrientation() const { return orientation; }
 glm::vec3 Camera::getUp() const { return up; }
-glm::vec3 Camera::getRight() const { return glm::normalize(glm::cross(orientation, up)); }

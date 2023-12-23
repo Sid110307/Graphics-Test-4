@@ -114,12 +114,12 @@ void main()
     {
         case 0:
         {
-            directionalLight();
+            pointLight();
             break;
         }
         case 1:
         {
-            pointLight();
+            directionalLight();
             break;
         }
         case 2:

@@ -12,11 +12,9 @@
 #include "include/objects.h"
 #include "include/camera.h"
 
-constexpr GLint WIDTH = 1280, HEIGHT = 720;
+constexpr GLint WIDTH = 1366, HEIGHT = 768;
 
 GLdouble lastFrameTime = 0.0f;
-GLfloat cameraNear = 0.1f, cameraFar = 100.0f;
-
 glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f),
         lightColor = glm::vec3(1.0f);
 const char* lightTypes[] = {"Point", "Directional", "Spot"};
@@ -58,7 +56,9 @@ GLFWwindow* init()
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+
     io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
@@ -69,7 +69,8 @@ GLFWwindow* init()
 
 namespace Callbacks
 {
-    bool wKeyHeld = false, sKeyHeld = false, aKeyHeld = false, dKeyHeld = false, lmbHeld = false;
+    bool wKeyHeld = false, sKeyHeld = false, aKeyHeld = false, dKeyHeld = false, eKeyHeld = false, qKeyHeld = false,
+            lmbHeld = false;
 
     void keyCallback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mods)
     {
@@ -84,12 +85,16 @@ namespace Callbacks
             if (key == GLFW_KEY_S) sKeyHeld = true;
             if (key == GLFW_KEY_A) aKeyHeld = true;
             if (key == GLFW_KEY_D) dKeyHeld = true;
+            if (key == GLFW_KEY_E) eKeyHeld = true;
+            if (key == GLFW_KEY_Q) qKeyHeld = true;
         } else if (action == GLFW_RELEASE)
         {
             if (key == GLFW_KEY_W) wKeyHeld = false;
             if (key == GLFW_KEY_S) sKeyHeld = false;
             if (key == GLFW_KEY_A) aKeyHeld = false;
             if (key == GLFW_KEY_D) dKeyHeld = false;
+            if (key == GLFW_KEY_E) eKeyHeld = false;
+            if (key == GLFW_KEY_Q) qKeyHeld = false;
         }
 
         if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) camera.resetProperties();
@@ -143,6 +148,8 @@ void handleInput(GLFWwindow* window, GLdouble deltaTime)
     if (Callbacks::sKeyHeld) camera.processKeyboard(CameraMovement::BACKWARD, deltaTime);
     if (Callbacks::aKeyHeld) camera.processKeyboard(CameraMovement::LEFT, deltaTime);
     if (Callbacks::dKeyHeld) camera.processKeyboard(CameraMovement::RIGHT, deltaTime);
+    if (Callbacks::eKeyHeld) camera.processKeyboard(CameraMovement::UP, deltaTime);
+    if (Callbacks::qKeyHeld) camera.processKeyboard(CameraMovement::DOWN, deltaTime);
 
     glfwSetKeyCallback(window, Callbacks::keyCallback);
     glfwSetCursorPosCallback(window, Callbacks::cursorCallback);
@@ -164,6 +171,8 @@ void renderGUI()
     ImGui::Text("S: Move Backward");
     ImGui::Text("A: Move Left");
     ImGui::Text("D: Move Right");
+    ImGui::Text("E: Move Up");
+    ImGui::Text("Q: Move Down");
     ImGui::Text("LMB: Rotate Camera");
     ImGui::Text("Scroll Wheel: Zoom Camera");
     ImGui::Text("Space: Reset Camera");
@@ -182,8 +191,8 @@ void renderGUI()
     ImGui::SliderFloat("Mouse Sensitivity", &camera.mouseSensitivity, 0.0f, 1.0f);
     ImGui::SliderFloat("Movement Speed", &camera.movementSpeed, 0.0f, 10.0f);
     ImGui::SliderFloat("Field of View", &camera.fov, 0.0f, 180.0f);
-    ImGui::SliderFloat("Near Plane", &cameraNear, 0.0f, 1.0f);
-    ImGui::SliderFloat("Far Plane", &cameraFar, 0.0f, 100.0f);
+    ImGui::SliderFloat("Near Plane", &camera.near, 0.0f, 1.0f);
+    ImGui::SliderFloat("Far Plane", &camera.far, 0.0f, 100.0f);
 
     ImGui::SeparatorText("Lighting");
     ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -10.0f, 10.0f);
@@ -215,6 +224,9 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
 
         defaultShader.use();
         defaultShader.setMatrices(view, projection);
+
+        defaultShader.setVec3("lightPos", lightPosition);
+        defaultShader.setVec3("viewPos", camera.getPosition());
 
         model.draw();
     }
@@ -253,8 +265,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = Camera::getProjectionMatrix(static_cast<GLfloat>(WIDTH) / static_cast<GLfloat>(HEIGHT),
-                                                           camera.fov, cameraNear, cameraFar);
+        glm::mat4 projection = camera.getProjectionMatrix(static_cast<GLfloat>(WIDTH) / static_cast<GLfloat>(HEIGHT),
+                                                          camera.fov);
 
         GLdouble currentFrameTime = glfwGetTime();
         GLdouble deltaTime = currentFrameTime - lastFrameTime;
