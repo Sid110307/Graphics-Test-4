@@ -99,7 +99,7 @@ void Shader::setMatrices(glm::mat4 view, glm::mat4 projection) const
     setMat4("projection", projection);
 }
 
-void Shader::setBool(const std::string &name, GLboolean value) const
+void Shader::setBool(const std::string &name, bool value) const
 {
     glUniform1i(glGetUniformLocation(ID, name.c_str()), static_cast<GLint>(value));
 }

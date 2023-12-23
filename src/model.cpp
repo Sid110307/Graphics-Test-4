@@ -168,7 +168,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
         aiString str;
         mat->GetTexture(type, i, &str);
 
-        GLboolean skip = false;
+        bool skip = false;
         for (const auto &texture: texturesLoaded)
         {
             if (std::strcmp(texture.path.data(), str.C_Str()) == 0)

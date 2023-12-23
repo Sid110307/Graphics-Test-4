@@ -16,7 +16,12 @@ constexpr GLint WIDTH = 1280, HEIGHT = 720;
 
 GLdouble lastFrameTime = 0.0f;
 GLfloat cameraNear = 0.1f, cameraFar = 100.0f;
-glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f);
+
+glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f),
+        lightColor = glm::vec3(1.0f);
+const char* lightTypes[] = {"Point", "Directional", "Spot"};
+GLint lightType = 0;
+bool enableAmbientLight = true, enableDiffuseLight = true, enableSpecularLight = true;
 
 ImGuiIO io;
 Camera camera;
@@ -64,7 +69,7 @@ GLFWwindow* init()
 
 namespace Callbacks
 {
-    GLboolean wKeyHeld = false, sKeyHeld = false, aKeyHeld = false, dKeyHeld = false, lmbHeld = false;
+    bool wKeyHeld = false, sKeyHeld = false, aKeyHeld = false, dKeyHeld = false, lmbHeld = false;
 
     void keyCallback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mods)
     {
@@ -96,7 +101,7 @@ namespace Callbacks
         if (io.WantCaptureMouse) return;
 
         static GLdouble lastX = WIDTH / 2.0f, lastY = HEIGHT / 2.0f;
-        static GLboolean firstMouse = true;
+        static bool firstMouse = true;
 
         if (firstMouse)
         {
@@ -184,6 +189,11 @@ void renderGUI()
     ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -10.0f, 10.0f);
     ImGui::SliderFloat3("Light Rotation", glm::value_ptr(lightRotation), -360.0f, 360.0f);
     ImGui::SliderFloat3("Light Scale", glm::value_ptr(lightScale), 0.0f, 10.0f);
+    ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
+    ImGui::Checkbox("Enable Ambient Light", &enableAmbientLight);
+    ImGui::Checkbox("Enable Diffuse Light", &enableDiffuseLight);
+    ImGui::Checkbox("Enable Specular Light", &enableSpecularLight);
+    ImGui::Combo("Light Type", &lightType, lightTypes, IM_ARRAYSIZE(lightTypes));
 
     ImGui::SeparatorText("Info");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -209,25 +219,25 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         model.draw();
     }
     {
-        // FIXME: Light is not working
         Shader lightShader("lib/shaders/lightVertex.glsl", "lib/shaders/lightFragment.glsl");
         Cube light(lightShader);
 
         light.position = lightPosition;
         light.rotation = lightRotation;
         light.scale = lightScale;
-
-        lightShader.setVec3("lightColor", glm::vec3(1.0f));
-        lightShader.setVec3("lightDirection", light.rotation);
-        lightShader.setVec3("lightPosition", light.position);
-        lightShader.setVec3("viewPos", camera.getPosition());
-        lightShader.setFloat("cutOff", glm::cos(glm::radians(12.5f)));
-        lightShader.setFloat("outerCutOff", glm::cos(glm::radians(17.5f)));
-
         light.updateModel();
 
         lightShader.use();
         lightShader.setMatrices(view, projection);
+
+        lightShader.setVec3("lightPosition", lightPosition);
+        lightShader.setVec3("lightDirection", lightRotation);
+        lightShader.setVec3("objectColor", lightColor);
+        lightShader.setVec3("lightColor", lightColor);
+        lightShader.setBool("enableAmbientLight", enableAmbientLight);
+        lightShader.setBool("enableDiffuseLight", enableDiffuseLight);
+        lightShader.setBool("enableSpecularLight", enableSpecularLight);
+        lightShader.setInt("lightType", lightType);
 
         light.draw();
     }
