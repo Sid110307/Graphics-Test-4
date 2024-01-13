@@ -1,3 +1,4 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 
 #include <imgui/imgui.h>
@@ -17,7 +18,7 @@ constexpr GLint WIDTH = 1366, HEIGHT = 768;
 GLdouble lastFrameTime = 0.0f;
 glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f),
         lightColor = glm::vec3(1.0f);
-const char* lightTypes[] = {"Point", "Directional", "Spot"};
+const GLchar* lightTypes[] = {"Point", "Directional", "Spot"};
 GLint lightType = 0;
 GLfloat spotLightAngle = 12.5f;
 bool enableAmbientLight = true, enableDiffuseLight = true, enableSpecularLight = true;
@@ -333,75 +334,19 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
     }
     {
         Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Cube cube(objectShader);
-
-        cube.position = glm::vec3(0.0f, 0.0f, -2.5f);
-        cube.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        cube.scale = glm::vec3(1.0f);
-        cube.updateModel();
-
-        setupShader(objectShader);
-        cube.draw();
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
         Sphere sphere(objectShader);
 
-        sphere.position = glm::vec3(0.0f, 0.0f, 2.5f);
+        sphere.position = glm::vec3(0.0f, 0.0f, -5.0f);
         sphere.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         sphere.scale = glm::vec3(1.0f);
         sphere.updateModel();
 
+        Texture("lib/textures/Bricks086_1K-PNG_Color.png", "diffuse").bind(GL_TEXTURE0);
+        Texture("lib/textures/Bricks086_1K-PNG_Roughness.png", "specular").bind(GL_TEXTURE1);
+
         setupShader(objectShader);
+        objectShader.setBool("hasTexture", true);
         sphere.draw();
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Cylinder cylinder(objectShader);
-
-        cylinder.position = glm::vec3(2.5f, 0.0f, 0.0f);
-        cylinder.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        cylinder.scale = glm::vec3(1.0f);
-        cylinder.updateModel();
-
-        setupShader(objectShader);
-        cylinder.draw();
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Cone cone(objectShader);
-
-        cone.position = glm::vec3(-2.5f, 0.0f, 0.0f);
-        cone.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        cone.scale = glm::vec3(1.0f);
-        cone.updateModel();
-
-        setupShader(objectShader);
-        cone.draw();
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Torus torus(objectShader);
-
-        torus.position = glm::vec3(0.0f, 2.5f, 0.0f);
-        torus.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        torus.scale = glm::vec3(1.0f);
-        torus.updateModel();
-
-        setupShader(objectShader);
-        torus.draw();
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Plane plane(objectShader);
-
-        plane.position = glm::vec3(0.0f, -2.5f, 0.0f);
-        plane.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        plane.scale = glm::vec3(1.0f);
-        plane.updateModel();
-
-        setupShader(objectShader);
-        plane.draw();
     }
 }
 

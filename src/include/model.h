@@ -17,18 +17,13 @@
 #include <assimp/postprocess.h>
 
 #include "shader.h"
+#include "texture.h"
 #include "objects.h"
 
 struct Vertex
 {
     glm::vec3 position, normal;
     glm::vec2 texCoords;
-};
-
-struct Texture
-{
-    GLuint id;
-    std::string type, path;
 };
 
 class Mesh
@@ -62,5 +57,4 @@ private:
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string &typeName);
-    static GLuint loadTextureFromFile(const GLchar* path, const std::string &dir);
 };

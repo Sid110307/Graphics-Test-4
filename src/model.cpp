@@ -1,22 +1,14 @@
 #include "include/model.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures)
         : vertices(std::move(vertices)), indices(std::move(indices)), textures(std::move(textures)), VAO(0), VBO(0),
-          EBO(0)
-{
-    setupMesh();
-}
+          EBO(0) { setupMesh(); }
 
 void Mesh::draw(Shader &shader)
 {
     GLuint diffuseNr = 1, specularNr = 1;
     for (GLuint i = 0; i < textures.size(); ++i)
     {
-        glActiveTexture(GL_TEXTURE0 + i);
-
         std::string number;
         std::string name = textures[i].type;
 
@@ -28,13 +20,12 @@ void Mesh::draw(Shader &shader)
         uniformName += number;
 
         shader.setInt(uniformName, static_cast<GLint>(i));
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        textures[i].bind(GL_TEXTURE0 + i);
     }
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, static_cast<GLint>(indices.size()), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
-
     glActiveTexture(GL_TEXTURE0);
 }
 
@@ -162,7 +153,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string &typeName)
 {
     std::vector<Texture> textures;
-
     for (GLuint i = 0; i < mat->GetTextureCount(type); ++i)
     {
         aiString str;
@@ -182,10 +172,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 
         if (!skip)
         {
-            Texture texture = {};
-            texture.id = loadTextureFromFile(str.C_Str(), directory);
-            texture.type = typeName;
-            texture.path = str.C_Str();
+            Texture texture(str.C_Str(), typeName);
 
             textures.push_back(texture);
             texturesLoaded.push_back(texture);
@@ -193,42 +180,4 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     }
 
     return textures;
-}
-
-GLuint Model::loadTextureFromFile(const GLchar* path, const std::string &dir)
-{
-    std::string filename = std::string(path);
-    filename = dir + '/' + filename;
-
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    GLint width, height, channels;
-    GLubyte* image = stbi_load(filename.c_str(), &width, &height, &channels, 0);
-    if (image)
-    {
-        GLint format = 0;
-        if (channels == 1) format = GL_RED;
-        else if (channels == 3) format = GL_RGB;
-        else if (channels == 4) format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image);
-
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, format == GL_RGBA ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, format == GL_RGBA ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR);
-
-        stbi_image_free(image);
-    } else
-    {
-        std::cerr << "Texture failed to load from path: " << path << std::endl;
-        stbi_image_free(image);
-    }
-
-    return textureID;
 }

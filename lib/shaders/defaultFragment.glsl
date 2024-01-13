@@ -23,11 +23,12 @@ uniform float shininess = 32.0;
 uniform bool enableAmbientLight;
 uniform bool enableDiffuseLight;
 uniform bool enableSpecularLight;
+uniform bool hasTexture;
 
 uniform float ambientStrength = 0.1;
 uniform float specularStrength = 0.5;
-uniform float linearAttenuation = 0.09;
-uniform float quadraticAttenuation = 0.032;
+uniform float linearIntensity = 0.09;
+uniform float quadraticIntensity = 0.032;
 
 struct Light
 {
@@ -69,44 +70,50 @@ vec3 calculateSpecularLight(Light light)
 
 void pointLight()
 {
-    Light light = createLight(lightPos, vec3(0.0), 1.0, linearAttenuation, quadraticAttenuation, 0.0);
+    Light light = createLight(lightPos, vec3(0.0), 1.0, linearIntensity, quadraticIntensity, 0.0);
 
     vec3 ambient = calculateAmbientLight();
     vec3 diffuse = calculateDiffuseLight(light);
     vec3 specular = calculateSpecularLight(light);
 
     float distance = length(light.position - FragmentPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    float intensity = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
-    vec3 tex = vec3(1.0);// TODO: Add texture support
-    FragColor = vec4((ambient + (diffuse + specular) * attenuation) * tex * objectColor, 1.0);
+    vec3 diffuseTex = hasTexture ? texture(texture_diffuse1, TexCoords).rgb * (ambient + diffuse) : objectColor * (ambient + diffuse);
+    vec3 specularTex = hasTexture ? texture(texture_specular1, TexCoords).rgb * specularStrength * specular : specularStrength * specular;
+
+    FragColor = vec4((diffuseTex + specularTex) * intensity, 1.0);
 }
 
 void directionalLight()
 {
-    Light light = createLight(vec3(0.0), lightDirection, 1.0, linearAttenuation, quadraticAttenuation, 0.0);
+    Light light = createLight(vec3(0.0), normalize(lightDirection), 1.0, linearIntensity, quadraticIntensity, 0.0);
 
     vec3 ambient = calculateAmbientLight();
     vec3 diffuse = calculateDiffuseLight(light);
     vec3 specular = calculateSpecularLight(light);
 
-    vec3 tex = vec3(1.0);// TODO: Add texture support
-    FragColor = vec4((ambient + diffuse + specular) * tex * objectColor, 1.0);
+    vec3 diffuseTex = hasTexture ? texture(texture_diffuse1, TexCoords).rgb * (ambient + diffuse) : objectColor * (ambient + diffuse);
+    vec3 specularTex = hasTexture ? texture(texture_specular1, TexCoords).rgb * specularStrength * specular : specularStrength * specular;
+
+    FragColor = vec4((diffuseTex + specularTex), 1.0);
 }
 
 void spotLight()
 {
-    Light light = createLight(lightPos, lightDirection, 1.0, linearAttenuation, quadraticAttenuation, cos(radians(spotLightAngle)));
+    Light light = createLight(lightPos, normalize(lightDirection), 1.0, linearIntensity, quadraticIntensity, cos(radians(spotLightAngle)));
 
     vec3 ambient = calculateAmbientLight();
     vec3 diffuse = calculateDiffuseLight(light);
     vec3 specular = calculateSpecularLight(light);
 
     float distance = length(light.position - FragmentPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    float intensity = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
-    vec3 tex = vec3(1.0);// TODO: Add texture support
-    FragColor = vec4((ambient + (diffuse + specular) * attenuation) * tex * objectColor, 1.0);
+    vec3 diffuseTex = hasTexture ? texture(texture_diffuse1, TexCoords).rgb * (ambient + diffuse * intensity) : objectColor * (ambient + diffuse * intensity);
+    vec3 specularTex = hasTexture ? texture(texture_specular1, TexCoords).rgb * specularStrength * intensity * specular : specularStrength * intensity * specular;
+
+    FragColor = vec4(diffuseTex + specularTex, 1.0);
 }
 
 void main()
