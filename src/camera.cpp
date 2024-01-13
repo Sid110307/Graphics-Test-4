@@ -21,12 +21,16 @@ void Camera::processKeyboard(CameraMovement direction, GLdouble deltaTime)
 {
     auto velocity = static_cast<GLfloat>(movementSpeed * deltaTime);
 
-    if (direction == FORWARD) position += orientation * velocity;
-    if (direction == BACKWARD) position -= orientation * velocity;
-    if (direction == LEFT) position -= right * velocity;
-    if (direction == RIGHT) position += right * velocity;
-    if (direction == UP) position += up * velocity;
-    if (direction == DOWN) position -= up * velocity;
+    glm::vec3 targetPosition = position;
+    if (direction == FORWARD) targetPosition += orientation * velocity;
+    if (direction == BACKWARD) targetPosition -= orientation * velocity;
+    if (direction == LEFT) targetPosition -= right * velocity;
+    if (direction == RIGHT) targetPosition += right * velocity;
+    if (direction == UP) targetPosition += up * velocity;
+    if (direction == DOWN) targetPosition -= up * velocity;
+
+    position = glm::mix(position, targetPosition, 0.1f);
+    updateCameraVectors();
 }
 
 void Camera::processMouseMovement(GLfloat xOffset, GLfloat yOffset)

@@ -77,10 +77,10 @@ namespace Callbacks
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
         if (io.WantCaptureKeyboard) return;
 
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-
         if (action == GLFW_PRESS)
         {
+            if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(window, true);
+
             if (key == GLFW_KEY_W) wKeyHeld = true;
             if (key == GLFW_KEY_S) sKeyHeld = true;
             if (key == GLFW_KEY_A) aKeyHeld = true;
@@ -189,10 +189,10 @@ void renderGUI()
 
     ImGui::SeparatorText("Camera Settings");
     ImGui::SliderFloat("Mouse Sensitivity", &camera.mouseSensitivity, 0.0f, 1.0f);
-    ImGui::SliderFloat("Movement Speed", &camera.movementSpeed, 0.0f, 10.0f);
+    ImGui::SliderFloat("Movement Speed", &camera.movementSpeed, 0.0f, 100.0f);
     ImGui::SliderFloat("Field of View", &camera.fov, 0.0f, 180.0f);
-    ImGui::SliderFloat("Near Plane", &camera.near, 0.0f, 1.0f);
-    ImGui::SliderFloat("Far Plane", &camera.far, 0.0f, 100.0f);
+    ImGui::SliderFloat("Near Plane", &camera.near, 0.0f, 1000.0f);
+    ImGui::SliderFloat("Far Plane", &camera.far, 0.0f, 1000.0f);
 
     ImGui::SeparatorText("Lighting");
     ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -10.0f, 10.0f);
@@ -242,6 +242,7 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         lightShader.use();
         lightShader.setMatrices(view, projection);
 
+        lightShader.setInt("lightType", lightType);
         lightShader.setVec3("lightPosition", lightPosition);
         lightShader.setVec3("lightDirection", lightRotation);
         lightShader.setVec3("objectColor", lightColor);
@@ -249,7 +250,6 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         lightShader.setBool("enableAmbientLight", enableAmbientLight);
         lightShader.setBool("enableDiffuseLight", enableDiffuseLight);
         lightShader.setBool("enableSpecularLight", enableSpecularLight);
-        lightShader.setInt("lightType", lightType);
 
         light.draw();
     }

@@ -72,6 +72,7 @@ void directionalLight()
 
 void pointLight()
 {
+    Light light = createLight(lightPosition, vec3(0.0), 1.0, linearAttenuation, quadraticAttenuation, 0.0);
     vec3 ambient = calculateAmbientLight();
 
     vec3 norm = normalize(Normal);
@@ -81,7 +82,7 @@ void pointLight()
     vec3 specular = calculateSpecularLight(norm, normalize(-FragPos), lightDir);
 
     float distance = length(lightPosition - FragPos);
-    float attenuation = 1.0 / (1.0 + linearAttenuation * distance + quadraticAttenuation * (distance * distance));
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
     vec3 result = (ambient + diffuse + specular) * objectColor * attenuation;
     FragColor = vec4(result, 1.0);
@@ -89,6 +90,7 @@ void pointLight()
 
 void spotLight()
 {
+    Light light = createLight(lightPosition, lightDirection, 1.0, linearAttenuation, quadraticAttenuation, 0.8);
     vec3 ambient = calculateAmbientLight();
 
     vec3 norm = normalize(Normal);
@@ -98,11 +100,10 @@ void spotLight()
     vec3 specular = calculateSpecularLight(norm, normalize(-FragPos), lightDir);
 
     float distance = length(lightPosition - FragPos);
-    float attenuation = 1.0 / (1.0 + linearAttenuation * distance + quadraticAttenuation * (distance * distance));
+    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
-    float theta = dot(lightDir, normalize(-lightDirection));
-    float epsilon = lightDirection.x > 0.0 ? 0.001 : -0.001;
-    float intensity = clamp((theta - lightDirection.x) / (lightDirection.x - epsilon), 0.0, 1.0);
+    float epsilon = light.cutoff;
+    float intensity = clamp((dot(lightDir, normalize(-light.direction)) - epsilon) / (1.0 - epsilon), 0.0, 1.0);
 
     vec3 result = (ambient + diffuse + specular) * objectColor * attenuation * intensity;
     FragColor = vec4(result, 1.0);

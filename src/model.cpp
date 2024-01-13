@@ -145,7 +145,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (GLuint j = 0; j < face.mNumIndices; ++j) indices.push_back(face.mIndices[j]);
     }
 
-    if (mesh->mMaterialIndex >= 0)
+    if (mesh->mMaterialIndex != static_cast<GLuint>(-1))
     {
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 

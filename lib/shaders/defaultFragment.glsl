@@ -20,13 +20,13 @@ void main()
 
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragmentPos);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diffuseStrength * diff * vec3(texture(texture_diffuse1, TexCoords));
+    vec3 diffuse = diffuseStrength * max(dot(norm, lightDir), 0.0) * vec3(texture(texture_diffuse1, TexCoords));
 
     vec3 viewDir = normalize(viewPos - FragmentPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * vec3(texture(texture_diffuse1, TexCoords));
 
-    FragColor = vec4(ambient + diffuse + specular, 1.0f);
+    vec3 result = (ambient + diffuse + specular) * vec3(texture(texture_diffuse1, TexCoords));
+    FragColor = vec4(result, 1.0);
 }
