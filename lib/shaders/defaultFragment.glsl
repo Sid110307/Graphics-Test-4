@@ -84,7 +84,7 @@ void pointLight()
 
 void directionalLight()
 {
-    Light light = createLight(vec3(0.0), -lightDirection, 1.0, linearAttenuation, quadraticAttenuation, 0.0);
+    Light light = createLight(vec3(0.0), lightDirection, 1.0, linearAttenuation, quadraticAttenuation, 0.0);
 
     vec3 ambient = calculateAmbientLight();
     vec3 diffuse = calculateDiffuseLight(light);

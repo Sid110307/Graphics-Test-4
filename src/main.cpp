@@ -196,7 +196,7 @@ void renderGUI()
     ImGui::SliderFloat("Far Plane", &camera.far, 0.0f, 1000.0f);
 
     ImGui::SeparatorText("Lighting");
-    ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -10.0f, 10.0f);
+    ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -100.0f, 100.0f);
     ImGui::SliderFloat3("Light Rotation", glm::value_ptr(lightRotation), -360.0f, 360.0f);
     ImGui::SliderFloat3("Light Scale", glm::value_ptr(lightScale), 0.0f, 10.0f);
     ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
@@ -234,24 +234,28 @@ void renderGUI()
 
 void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
 {
+    auto setupShader = [&](Shader &shader)
+    {
+        shader.use();
+        shader.setMatrices(view, projection);
+
+        shader.setVec3("lightColor", lightColor);
+        shader.setVec3("lightPos", lightPosition);
+        shader.setVec3("lightDirection", lightRotation);
+        shader.setVec3("viewPos", camera.getPosition());
+        shader.setVec3("objectColor", lightColor);
+        shader.setInt("lightType", lightType);
+        shader.setFloat("spotLightAngle", spotLightAngle);
+        shader.setBool("enableAmbientLight", enableAmbientLight);
+        shader.setBool("enableDiffuseLight", enableDiffuseLight);
+        shader.setBool("enableSpecularLight", enableSpecularLight);
+    };
+
     {
         Shader defaultShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
         Model model("lib/models/cube.stl", defaultShader);
 
-        defaultShader.use();
-        defaultShader.setMatrices(view, projection);
-
-        defaultShader.setVec3("lightColor", lightColor);
-        defaultShader.setVec3("lightPos", lightPosition);
-        defaultShader.setVec3("lightDirection", lightRotation);
-        defaultShader.setVec3("viewPos", camera.getPosition());
-        defaultShader.setVec3("objectColor", lightColor);
-        defaultShader.setInt("lightType", lightType);
-        defaultShader.setFloat("spotLightAngle", spotLightAngle);
-        defaultShader.setBool("enableAmbientLight", enableAmbientLight);
-        defaultShader.setBool("enableDiffuseLight", enableDiffuseLight);
-        defaultShader.setBool("enableSpecularLight", enableSpecularLight);
-
+        setupShader(defaultShader);
         model.draw();
     }
     {
@@ -326,6 +330,78 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
 
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Cube cube(objectShader);
+
+        cube.position = glm::vec3(0.0f, 0.0f, -2.5f);
+        cube.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        cube.scale = glm::vec3(1.0f);
+        cube.updateModel();
+
+        setupShader(objectShader);
+        cube.draw();
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Sphere sphere(objectShader);
+
+        sphere.position = glm::vec3(0.0f, 0.0f, 2.5f);
+        sphere.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        sphere.scale = glm::vec3(1.0f);
+        sphere.updateModel();
+
+        setupShader(objectShader);
+        sphere.draw();
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Cylinder cylinder(objectShader);
+
+        cylinder.position = glm::vec3(2.5f, 0.0f, 0.0f);
+        cylinder.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        cylinder.scale = glm::vec3(1.0f);
+        cylinder.updateModel();
+
+        setupShader(objectShader);
+        cylinder.draw();
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Cone cone(objectShader);
+
+        cone.position = glm::vec3(-2.5f, 0.0f, 0.0f);
+        cone.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        cone.scale = glm::vec3(1.0f);
+        cone.updateModel();
+
+        setupShader(objectShader);
+        cone.draw();
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Torus torus(objectShader);
+
+        torus.position = glm::vec3(0.0f, 2.5f, 0.0f);
+        torus.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        torus.scale = glm::vec3(1.0f);
+        torus.updateModel();
+
+        setupShader(objectShader);
+        torus.draw();
+    }
+    {
+        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Plane plane(objectShader);
+
+        plane.position = glm::vec3(0.0f, -2.5f, 0.0f);
+        plane.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        plane.scale = glm::vec3(1.0f);
+        plane.updateModel();
+
+        setupShader(objectShader);
+        plane.draw();
     }
 }
 
