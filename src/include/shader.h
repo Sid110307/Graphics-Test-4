@@ -17,6 +17,8 @@ public:
     GLuint ID;
 
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath);
+    ~Shader();
+
     void use() const;
     void setMatrices(glm::mat4 view, glm::mat4 projection) const;
 

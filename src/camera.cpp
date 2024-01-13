@@ -67,6 +67,8 @@ void Camera::resetProperties()
     movementSpeed = SPEED;
     mouseSensitivity = SENSITIVITY;
     fov = FOV;
+
+    updateCameraVectors();
 }
 
 void Camera::updateCameraVectors()

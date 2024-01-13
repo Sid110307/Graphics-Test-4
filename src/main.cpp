@@ -19,6 +19,7 @@ glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), ligh
         lightColor = glm::vec3(1.0f);
 const char* lightTypes[] = {"Point", "Directional", "Spot"};
 GLint lightType = 0;
+GLfloat spotLightAngle = 12.5f;
 bool enableAmbientLight = true, enableDiffuseLight = true, enableSpecularLight = true;
 
 ImGuiIO io;
@@ -56,9 +57,8 @@ GLFWwindow* init()
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-
     io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    static_cast<void>(io);
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
@@ -163,8 +163,9 @@ void renderGUI()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoTitleBar);
-    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetWindowSize(ImVec2(WIDTH / 3.5f, HEIGHT));
 
     ImGui::SeparatorText("Controls");
     ImGui::Text("W: Move Forward");
@@ -203,6 +204,21 @@ void renderGUI()
     ImGui::Checkbox("Enable Diffuse Light", &enableDiffuseLight);
     ImGui::Checkbox("Enable Specular Light", &enableSpecularLight);
     ImGui::Combo("Light Type", &lightType, lightTypes, IM_ARRAYSIZE(lightTypes));
+    if (lightType == 2) ImGui::SliderFloat("Spot Light Angle", &spotLightAngle, 0.0f, 90.0f);
+    if (ImGui::Button("Reset Light"))
+    {
+        lightPosition = glm::vec3(0.0f);
+        lightRotation = glm::vec3(0.0f);
+        lightScale = glm::vec3(1.0f);
+        lightColor = glm::vec3(1.0f);
+
+        lightType = 0;
+        spotLightAngle = 12.5f;
+
+        enableAmbientLight = true;
+        enableDiffuseLight = true;
+        enableSpecularLight = true;
+    }
 
     ImGui::SeparatorText("Info");
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -225,8 +241,16 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         defaultShader.use();
         defaultShader.setMatrices(view, projection);
 
+        defaultShader.setVec3("lightColor", lightColor);
         defaultShader.setVec3("lightPos", lightPosition);
+        defaultShader.setVec3("lightDirection", lightRotation);
         defaultShader.setVec3("viewPos", camera.getPosition());
+        defaultShader.setVec3("objectColor", lightColor);
+        defaultShader.setInt("lightType", lightType);
+        defaultShader.setFloat("spotLightAngle", spotLightAngle);
+        defaultShader.setBool("enableAmbientLight", enableAmbientLight);
+        defaultShader.setBool("enableDiffuseLight", enableDiffuseLight);
+        defaultShader.setBool("enableSpecularLight", enableSpecularLight);
 
         model.draw();
     }
@@ -242,22 +266,76 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         lightShader.use();
         lightShader.setMatrices(view, projection);
 
-        lightShader.setInt("lightType", lightType);
-        lightShader.setVec3("lightPosition", lightPosition);
-        lightShader.setVec3("lightDirection", lightRotation);
-        lightShader.setVec3("objectColor", lightColor);
         lightShader.setVec3("lightColor", lightColor);
-        lightShader.setBool("enableAmbientLight", enableAmbientLight);
-        lightShader.setBool("enableDiffuseLight", enableDiffuseLight);
-        lightShader.setBool("enableSpecularLight", enableSpecularLight);
-
         light.draw();
+    }
+    {
+        Shader arrowShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+
+        arrowShader.use();
+        arrowShader.setMatrices(view, projection);
+
+        GLfloat vertices[] = {
+                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
+
+                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x + 95.0f, lightPosition.y + 5.0f, lightPosition.z, lightColor.x, lightColor.y,
+                lightColor.z,
+                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x + 95.0f, lightPosition.y - 5.0f, lightPosition.z, lightColor.x, lightColor.y,
+                lightColor.z,
+                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x + 5.0f, lightPosition.y + 95.0f, lightPosition.z, lightColor.x, lightColor.y,
+                lightColor.z,
+                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x - 5.0f, lightPosition.y + 95.0f, lightPosition.z, lightColor.x, lightColor.y,
+                lightColor.z,
+                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y + 5.0f, lightPosition.z + 95.0f, lightColor.x, lightColor.y,
+                lightColor.z,
+                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
+                lightPosition.x, lightPosition.y - 5.0f, lightPosition.z + 95.0f, lightColor.x, lightColor.y,
+                lightColor.z,
+        };
+
+        GLuint VAO, VBO;
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
+                              reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
+
+        glBindVertexArray(0);
+        glLineWidth(5.0f);
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_LINES, 0, 6);
+        glBindVertexArray(0);
+
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
     }
 }
 
 int main()
 {
     auto window = init();
+
+    #ifndef NDEBUG
+    ImGui::GetIO().IniFilename = nullptr;
+    #endif
 
     while (!glfwWindowShouldClose(window))
     {

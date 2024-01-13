@@ -83,10 +83,8 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath)
     glDeleteShader(fragmentShader);
 }
 
-void Shader::use() const
-{
-    glUseProgram(ID);
-}
+Shader::~Shader() { glDeleteProgram(ID); }
+void Shader::use() const { glUseProgram(ID); }
 
 void Shader::setMatrices(glm::mat4 view, glm::mat4 projection) const
 {
