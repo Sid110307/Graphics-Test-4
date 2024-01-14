@@ -22,7 +22,7 @@
 
 struct Vertex
 {
-    glm::vec3 position, normal;
+    glm::vec3 position, normal, color;
     glm::vec2 texCoords;
 };
 

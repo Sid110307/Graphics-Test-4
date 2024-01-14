@@ -16,15 +16,100 @@
 constexpr GLint WIDTH = 1366, HEIGHT = 768;
 
 GLdouble lastFrameTime = 0.0f;
-glm::vec3 lightPosition = glm::vec3(0.0f), lightRotation = glm::vec3(0.0f), lightScale = glm::vec3(1.0f),
-        lightColor = glm::vec3(1.0f);
 const GLchar* lightTypes[] = {"Point", "Directional", "Spot"};
+glm::vec3 lightPosition(0.0f), lightRotation(0.0f), lightScale(1.0f);
+glm::vec4 lightColor(1.0f);
 GLint lightType = 0;
 GLfloat spotLightAngle = 12.5f;
 bool enableAmbientLight = true, enableDiffuseLight = true, enableSpecularLight = true;
 
 ImGuiIO io;
 Camera camera;
+
+void debugLog(GLenum source, GLenum type, GLuint id, GLenum severity, GLint, const GLchar* message, const void*)
+{
+    if (type == GL_DEBUG_TYPE_OTHER) return;
+
+    std::cerr << "Source: ";
+    switch (source)
+    {
+        case GL_DEBUG_SOURCE_API:
+            std::cerr << "API";
+            break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+            std::cerr << "Window System";
+            break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+            std::cerr << "Shader Compiler";
+            break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+            std::cerr << "Third Party";
+            break;
+        case GL_DEBUG_SOURCE_APPLICATION:
+            std::cerr << "Application";
+            break;
+        case GL_DEBUG_SOURCE_OTHER:
+            std::cerr << "Other";
+            break;
+        default:
+            std::cerr << "Unknown";
+            break;
+    }
+
+    std::cerr << "\nType: ";
+    switch (type)
+    {
+        case GL_DEBUG_TYPE_ERROR:
+            std::cerr << "Error";
+            break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+            std::cerr << "Deprecated Behaviour";
+            break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+            std::cerr << "Undefined Behaviour";
+            break;
+        case GL_DEBUG_TYPE_PORTABILITY:
+            std::cerr << "Portability";
+            break;
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            std::cerr << "Performance";
+            break;
+        case GL_DEBUG_TYPE_MARKER:
+            std::cerr << "Marker";
+            break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:
+            std::cerr << "Push Group";
+            break;
+        case GL_DEBUG_TYPE_POP_GROUP:
+            std::cerr << "Pop Group";
+            break;
+        default:
+            std::cerr << "Unknown";
+            break;
+    }
+
+    std::cerr << "\nID: " << id << "\nSeverity: ";
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:
+            std::cerr << "High";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            std::cerr << "Medium";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            std::cerr << "Low";
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            std::cerr << "Notification";
+            break;
+        default:
+            std::cerr << "Unknown";
+            break;
+    }
+
+    std::cerr << "\nMessage: " << message << "\n\n";
+}
 
 GLFWwindow* init()
 {
@@ -52,6 +137,12 @@ GLFWwindow* init()
 
         exit(EXIT_FAILURE);
     }
+
+    #ifndef NDEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(debugLog, nullptr);
+    #endif
 
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
@@ -200,7 +291,7 @@ void renderGUI()
     ImGui::SliderFloat3("Light Position", glm::value_ptr(lightPosition), -100.0f, 100.0f);
     ImGui::SliderFloat3("Light Rotation", glm::value_ptr(lightRotation), -360.0f, 360.0f);
     ImGui::SliderFloat3("Light Scale", glm::value_ptr(lightScale), 0.0f, 10.0f);
-    ImGui::ColorEdit3("Light Color", glm::value_ptr(lightColor));
+    ImGui::ColorEdit4("Light Color", glm::value_ptr(lightColor));
     ImGui::Checkbox("Enable Ambient Light", &enableAmbientLight);
     ImGui::Checkbox("Enable Diffuse Light", &enableDiffuseLight);
     ImGui::Checkbox("Enable Specular Light", &enableSpecularLight);
@@ -211,7 +302,7 @@ void renderGUI()
         lightPosition = glm::vec3(0.0f);
         lightRotation = glm::vec3(0.0f);
         lightScale = glm::vec3(1.0f);
-        lightColor = glm::vec3(1.0f);
+        lightColor = glm::vec4(1.0f);
 
         lightType = 0;
         spotLightAngle = 12.5f;
@@ -271,81 +362,26 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         lightShader.use();
         lightShader.setMatrices(view, projection);
 
-        lightShader.setVec3("lightColor", lightColor);
+        lightShader.setVec4("lightColor", lightColor);
         light.draw();
     }
     {
-        Shader arrowShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-
-        arrowShader.use();
-        arrowShader.setMatrices(view, projection);
-
-        GLfloat vertices[] = {
-                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
-
-                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x + 95.0f, lightPosition.y + 5.0f, lightPosition.z, lightColor.x, lightColor.y,
-                lightColor.z,
-                lightPosition.x + 100.0f, lightPosition.y, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x + 95.0f, lightPosition.y - 5.0f, lightPosition.z, lightColor.x, lightColor.y,
-                lightColor.z,
-                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x + 5.0f, lightPosition.y + 95.0f, lightPosition.z, lightColor.x, lightColor.y,
-                lightColor.z,
-                lightPosition.x, lightPosition.y + 100.0f, lightPosition.z, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x - 5.0f, lightPosition.y + 95.0f, lightPosition.z, lightColor.x, lightColor.y,
-                lightColor.z,
-                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y + 5.0f, lightPosition.z + 95.0f, lightColor.x, lightColor.y,
-                lightColor.z,
-                lightPosition.x, lightPosition.y, lightPosition.z + 100.0f, lightColor.x, lightColor.y, lightColor.z,
-                lightPosition.x, lightPosition.y - 5.0f, lightPosition.z + 95.0f, lightColor.x, lightColor.y,
-                lightColor.z,
-        };
-
-        GLuint VAO, VBO;
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
-                              reinterpret_cast<void*>(3 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(1);
-
-        glBindVertexArray(0);
-        glLineWidth(5.0f);
-
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_LINES, 0, 6);
-        glBindVertexArray(0);
-
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-    }
-    {
-        Shader objectShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
-        Sphere sphere(objectShader);
+        Shader sphereShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Sphere sphere(sphereShader);
 
         sphere.position = glm::vec3(0.0f, 0.0f, -5.0f);
         sphere.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
         sphere.scale = glm::vec3(1.0f);
         sphere.updateModel();
 
-        Texture("lib/textures/Bricks086_1K-PNG_Color.png", "diffuse").bind(GL_TEXTURE0);
-        Texture("lib/textures/Bricks086_1K-PNG_Roughness.png", "specular").bind(GL_TEXTURE1);
+        Texture texDiffuse("lib/textures/Bricks086_1K-PNG_Color.png", "diffuse");
+        texDiffuse.bind(GL_TEXTURE0);
 
-        setupShader(objectShader);
-        objectShader.setBool("hasTexture", true);
+        Texture texSpecular("lib/textures/Bricks086_1K-PNG_Roughness.png", "specular");
+        texSpecular.bind(GL_TEXTURE1);
+
+        setupShader(sphereShader);
+        sphereShader.setBool("hasTexture", true);
         sphere.draw();
     }
 }

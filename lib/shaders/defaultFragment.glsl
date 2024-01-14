@@ -99,21 +99,47 @@ void directionalLight()
     FragColor = vec4((diffuseTex + specularTex), 1.0);
 }
 
+/*
+vec4 spotLight() {
+    float outerCone = 0.90f;
+    float innerCone = 0.95f;
+
+    float ambience = 0.25f;
+    vec3 normal = normalize(outputNormal);
+    vec3 lightDirection = normalize(lightPosition - outputFragmentPosition);
+    float diffuse = max(dot(normal, lightDirection), 0.0f);
+
+    float specularStrength = 0.5f;
+    vec3 viewDirection = normalize(cameraPosition - outputFragmentPosition);
+    vec3 reflectDirection = reflect(-lightDirection, normal);
+    float specular = pow(max(dot(viewDirection, reflectDirection), 0.0f), 32.0f) * specularStrength;
+
+    float angle = dot(vec3(0.0f, -1.0f, 0.0f), -lightDirection);
+    float intensity = clamp((angle - outerCone) / (innerCone - outerCone), 0.0f, 1.0f);
+
+    vec4 diffuseTex = vec4(texture(texture_diffuse1, outputTextureCoords).rgb * (diffuse + ambience), 1.0f);
+    vec4 specularTex = vec4(texture(texture_specular1, outputTextureCoords).rgb * specular, 1.0f);
+
+    return (diffuseTex + specularTex) * lightColor * intensity;
+}
+*/
+
 void spotLight()
 {
-    Light light = createLight(lightPos, normalize(lightDirection), 1.0, linearIntensity, quadraticIntensity, cos(radians(spotLightAngle)));
+    float outerCone = cos(radians(spotLightAngle)), innerCone = cos(radians(spotLightAngle + 5.0));
+    Light light = createLight(lightPos, normalize(lightDirection), 1.0, linearIntensity, quadraticIntensity, outerCone);
 
     vec3 ambient = calculateAmbientLight();
     vec3 diffuse = calculateDiffuseLight(light);
     vec3 specular = calculateSpecularLight(light);
 
-    float distance = length(light.position - FragmentPos);
-    float intensity = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    float angle = dot(normalize(lightDirection), normalize(light.position - FragmentPos));
+    float intensity = clamp((angle - outerCone) / (innerCone - outerCone), 0.0, 1.0);
 
-    vec3 diffuseTex = hasTexture ? texture(texture_diffuse1, TexCoords).rgb * (ambient + diffuse * intensity) : objectColor * (ambient + diffuse * intensity);
-    vec3 specularTex = hasTexture ? texture(texture_specular1, TexCoords).rgb * specularStrength * intensity * specular : specularStrength * intensity * specular;
+    vec3 diffuseTex = hasTexture ? texture(texture_diffuse1, TexCoords).rgb * (ambient + diffuse) : objectColor * (ambient + diffuse);
+    vec3 specularTex = hasTexture ? texture(texture_specular1, TexCoords).rgb * specularStrength * specular : specularStrength * specular;
 
-    FragColor = vec4(diffuseTex + specularTex, 1.0);
+    FragColor = vec4((diffuseTex + specularTex) * intensity, 1.0);
 }
 
 void main()

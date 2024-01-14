@@ -1,36 +1,25 @@
 #include "include/texture.h"
 
-static std::string getError(GLenum error)
-{
-    switch (error)
-    {
-        case GL_INVALID_ENUM:
-            return "Invalid enum";
-        case GL_INVALID_VALUE:
-            return "Invalid value";
-        case GL_INVALID_OPERATION:
-            return "Invalid operation";
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            return "Invalid framebuffer operation";
-        case GL_OUT_OF_MEMORY:
-            return "Out of memory";
-        default:
-            return "Unknown error";
-    }
-}
-
 Texture::Texture(const GLchar* file, const std::string &type)
 {
     this->type = type;
+    path = file;
+
     glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
 
-    GLint width, height, numComponents;
-    auto data = stbi_load(file, &width, &height, &numComponents, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, numChannels;
+    unsigned char* data = stbi_load(file, &width, &height, &numChannels, 0);
     if (data)
     {
-        GLenum format;
-        switch (numComponents)
+        GLenum format = 0;
+        switch (numChannels)
         {
             case 1:
                 format = GL_RED;
@@ -42,41 +31,16 @@ Texture::Texture(const GLchar* file, const std::string &type)
                 format = GL_RGBA;
                 break;
             default:
-                std::cerr << "Unsupported number of components in image: " << numComponents << std::endl;
-                stbi_image_free(data);
-
-                return;
+                std::cerr << "Invalid number of channels (" << numChannels << ") in texture \"" << file << "\""
+                          << std::endl;
+                break;
         }
 
-        glBindTexture(GL_TEXTURE_2D, id);
         glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(format), width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else std::cerr << "Failed to load texture from file \"" << file << "\": " << stbi_failure_reason() << std::endl;
 
-        if (numComponents == 3) glGenerateMipmap(GL_TEXTURE_2D);
-        else
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        }
-
-        stbi_image_free(data);
-    } else
-    {
-        std::cerr << "Failed to load texture from file \"" << file << "\": " << stbi_failure_reason() << std::endl;
-        stbi_image_free(data);
-
-        return;
-    }
-
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cerr << "Failed to create texture from file \"" << file << "\": " << getError(error) << std::endl;
-        glDeleteTextures(1, &id);
-
-        return;
-    }
+    stbi_image_free(data);
 }
 
 Texture::~Texture() { glDeleteTextures(1, &id); }

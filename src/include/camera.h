@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-constexpr GLfloat SPEED = 5.0f, SENSITIVITY = 0.1f, FOV = 45.0f, NEAR = 0.1f, FAR = 100.0f;
+constexpr GLfloat SPEED = 10.0f, SENSITIVITY = 0.1f, FOV = 45.0f, NEAR = 0.1f, FAR = 100.0f;
 
 enum CameraMovement
 {
