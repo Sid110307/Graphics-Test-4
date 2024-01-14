@@ -13,14 +13,14 @@
 #include "include/objects.h"
 #include "include/camera.h"
 
-constexpr GLint WIDTH = 1366, HEIGHT = 768;
+GLint WIDTH = 1366, HEIGHT = 768;
 
 GLdouble lastFrameTime = 0.0f;
 const GLchar* lightTypes[] = {"Point", "Directional", "Spot"};
 glm::vec3 lightPosition(0.0f), lightRotation(0.0f), lightScale(1.0f);
 glm::vec4 lightColor(1.0f);
 GLint lightType = 0;
-GLfloat spotLightAngle = 12.5f;
+GLfloat spotLightAngle = 25.0f;
 bool enableAmbientLight = true, enableDiffuseLight = true, enableSpecularLight = true;
 
 ImGuiIO io;
@@ -156,6 +156,14 @@ GLFWwindow* init()
     ImGui_ImplOpenGL3_Init("#version 330 core");
     ImGui::StyleColorsDark();
 
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, GLint width, GLint height)
+    {
+        WIDTH = width;
+        HEIGHT = height;
+
+        glViewport(0, 0, width, height);
+    });
+
     return window;
 }
 
@@ -197,7 +205,7 @@ namespace Callbacks
         ImGui_ImplGlfw_CursorPosCallback(window, xPos, yPos);
         if (io.WantCaptureMouse) return;
 
-        static GLdouble lastX = WIDTH / 2.0f, lastY = HEIGHT / 2.0f;
+        static GLdouble lastX = static_cast<GLfloat>(WIDTH) / 2.0f, lastY = static_cast<GLfloat>(HEIGHT) / 2.0f;
         static bool firstMouse = true;
 
         if (firstMouse)
@@ -257,7 +265,7 @@ void renderGUI()
 
     ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
     ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetWindowSize(ImVec2(WIDTH / 3.5f, HEIGHT));
+    ImGui::SetWindowSize(ImVec2(static_cast<GLfloat>(WIDTH ) / 3.5f, static_cast<GLfloat>(HEIGHT)));
 
     ImGui::SeparatorText("Controls");
     ImGui::Text("W: Move Forward");
@@ -305,7 +313,7 @@ void renderGUI()
         lightColor = glm::vec4(1.0f);
 
         lightType = 0;
-        spotLightAngle = 12.5f;
+        spotLightAngle = 25.0f;
 
         enableAmbientLight = true;
         enableDiffuseLight = true;
@@ -383,6 +391,25 @@ void renderGraphics(glm::mat4 &view, glm::mat4 &projection)
         setupShader(sphereShader);
         sphereShader.setBool("hasTexture", true);
         sphere.draw();
+    }
+    {
+        Shader planeShader("lib/shaders/defaultVertex.glsl", "lib/shaders/defaultFragment.glsl");
+        Plane plane(planeShader);
+
+        plane.position = glm::vec3(0.0f, -1.0f, 0.0f);
+        plane.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+        plane.scale = glm::vec3(10.0f);
+        plane.updateModel();
+
+        Texture texDiffuse("lib/textures/Bricks086_1K-PNG_Color.png", "diffuse");
+        texDiffuse.bind(GL_TEXTURE0);
+
+        Texture texSpecular("lib/textures/Bricks086_1K-PNG_Roughness.png", "specular");
+        texSpecular.bind(GL_TEXTURE1);
+
+        setupShader(planeShader);
+        planeShader.setBool("hasTexture", true);
+        plane.draw();
     }
 }
 
