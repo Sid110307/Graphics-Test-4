@@ -119,6 +119,14 @@ GLFWwindow* init()
         exit(EXIT_FAILURE);
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    #ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
+
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Graphics Test 4", nullptr, nullptr);
     if (!window)
     {
@@ -138,7 +146,7 @@ GLFWwindow* init()
         exit(EXIT_FAILURE);
     }
 
-    #ifndef NDEBUG
+    #ifdef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(debugLog, nullptr);
@@ -263,7 +271,7 @@ void renderGUI()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+    ImGui::Begin("Graphics Test 4", nullptr, ImGuiWindowFlags_NoMove);
     ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
     ImGui::SetWindowSize(ImVec2(static_cast<GLfloat>(WIDTH ) / 3.5f, static_cast<GLfloat>(HEIGHT)));
 
